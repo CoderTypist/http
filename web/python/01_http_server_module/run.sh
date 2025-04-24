@@ -61,11 +61,11 @@ main()
     }
     sleep 1
 
-    # make http requests
+    # make http requests with curl
     tmux select-pane -t $pane_client -- \
-    && tmux send-keys "curl http://${web_server_ip}:${web_server_port}/line.txt" C-m \
-    && tmux send-keys "curl http://${web_server_ip}:${web_server_port}/lines.txt" C-m \
-    && tmux send-keys "curl http://${web_server_ip}:${web_server_port}/nonexistent.txt" C-m ||
+    && tmux send-keys "curl --trace - http://${web_server_ip}:${web_server_port}/line.txt" C-m \
+    && tmux send-keys "curl --trace - http://${web_server_ip}:${web_server_port}/lines.txt" C-m \
+    && tmux send-keys "curl --trace - http://${web_server_ip}:${web_server_port}/nonexistent.txt" C-m ||
     {
         tmux kill-session;
         echo "Failed to make HTTP requests";
