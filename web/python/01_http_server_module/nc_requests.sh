@@ -2,14 +2,14 @@
 
 main() {
 	
-    local nc_version="$(nc -h 2>&1 | grep netcat | sed -E 's/.*\((.*)\)/\1/g' | awk -F' ' '{ print $NF }')"
+    local netcat_version="$(nc -h 2>&1 | grep netcat | sed -E 's/.*\((.*)\)/\1/g' | awk -F' ' '{ print $NF }')"
     local cr=$'\r'
 
     get_request_line="$(
 		cat <<- EOF
 			GET /line.txt HTTP/1.1${cr}
 			Host: 127.0.0.1:8888${cr}
-			User-Agent: telnet/${nc_version}${cr}
+			User-Agent: netcat/${netcat_version}${cr}
 			Accept: */*${cr}
 			${cr}
 		EOF
@@ -19,7 +19,7 @@ main() {
 		cat <<- EOF
 			GET /lines.txt HTTP/1.1${cr}
 			Host: 127.0.0.1:8888${cr}
-			User-Agent: telnet/${nc_version}${cr}
+			User-Agent: netcat/${netcat_version}${cr}
 			Accept: */*${cr}
 			${cr}
 		EOF
@@ -29,7 +29,7 @@ main() {
 		cat <<- EOF
 			GET /nonexistent.txt HTTP/1.1${cr}
 			Host: 127.0.0.1:8888${cr}
-			User-Agent: telnet/${nc_version}${cr}
+			User-Agent: netcat/${netcat_version}${cr}
 			Accept: */*${cr}
 			${cr}
 		EOF
