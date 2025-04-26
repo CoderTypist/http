@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source conf.src.sh ||
+source ../conf.src.sh ||
 {
     echo "Failed to source conf.src.sh" >&2;
     exit 1;
