@@ -9,16 +9,16 @@ main() {
     }
 
     curl --trace - "http://${WEB_SERVER_IP}:${WEB_SERVER_PORT}/lines.txt" ||
-	{
-		echo "Error in requesting /lines.txt" >&2;
-		exit 1;
-	}
+    {
+        echo "Error in requesting /lines.txt" >&2;
+        exit 1;
+    }
 
     curl --trace - "http://${WEB_SERVER_IP}:${WEB_SERVER_PORT}/nonexistent.txt" ||
-	{
-		echo "Error in requesting /nonexistent.txt" >&2;
-		exit 1;
-	}
+    {
+        echo "Error in requesting /nonexistent.txt" >&2;
+        exit 1;
+    }
 }
 
 source ../setup.src.sh ||

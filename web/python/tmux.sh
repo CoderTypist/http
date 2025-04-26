@@ -30,21 +30,21 @@ main()
     }
 	
 	# export web server info
-	export WEB_SERVER_IP ||
-	{
-		echo "Failed to export WEB_SERVER_IP" >&2;
-		exit 1;
-	}
-	export WEB_SERVER_PORT ||
-	{
-		echo "Failed to export WEB_SERVER_PORT">&2;
-		exit 1;
-	}
-	export WEB_SERVER_DIR ||
-	{
-		echo "Failed to export WEB_SERVER_DIR">&2;
-		exit 1;
-	}
+    export WEB_SERVER_IP ||
+    {
+        echo "Failed to export WEB_SERVER_IP" >&2;
+        exit 1;
+    }
+    export WEB_SERVER_PORT ||
+    {
+        echo "Failed to export WEB_SERVER_PORT">&2;
+        exit 1;
+    }
+    export WEB_SERVER_DIR ||
+    {
+        echo "Failed to export WEB_SERVER_DIR">&2;
+        exit 1;
+    }
 
     # new session
     tmux new-session -d ||
@@ -61,16 +61,16 @@ main()
         exit 1;
     }
 	
-	# source bashrc
-	local bashrc="/home/${USER}/.bashrc"
-	tmux select-pane -t $pane_tcpdump && tmux send-keys "source ${bashrc}" C-m \
-	&& tmux select-pane -t $pane_client && tmux send-keys "source ${bashrc}" C-m \
-	&& tmux select-pane -t $pane_server && tmux send-keys "source ${bashrc}" C-m ||
-	{
-		tmux kill-session;
-		echo "Failed to source ${bashrc}";
-		exit 1;
-	}
+    # source bashrc
+    local bashrc="/home/${USER}/.bashrc"
+    tmux select-pane -t $pane_tcpdump && tmux send-keys "source ${bashrc}" C-m \
+    && tmux select-pane -t $pane_client && tmux send-keys "source ${bashrc}" C-m \
+    && tmux select-pane -t $pane_server && tmux send-keys "source ${bashrc}" C-m ||
+    {
+        tmux kill-session;
+        echo "Failed to source ${bashrc}";
+        exit 1;
+    }
 
     # run tcpdump
     echo "PASSWORD: $PASSWORD"
@@ -91,13 +91,13 @@ main()
     }
     sleep 1
 
-	# select client pane
-	tmux select-pane -t $pane_client ||
-	{
-		tmux kill-session;
-		echo "Failed to select client pane" >&2;
-		exit ;
-	}
+    # select client pane
+    tmux select-pane -t $pane_client ||
+    {
+        tmux kill-session;
+        echo "Failed to select client pane" >&2;
+        exit ;
+    }
 
     # attach
     tmux -2 attach-session ||
