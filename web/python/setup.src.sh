@@ -1,4 +1,6 @@
-# intended to be sourced
+# >>> setup.src.sh >>>
+
+# --- ENSURE WEB SERVER CONFIG IS PRESENT ---
 
 if [[ -n "${TMUX}" ]]; then
     if [[ -z "${WEB_SERVER_IP}" ]]; then
@@ -23,3 +25,4 @@ else
     }
 fi
 
+# <<< setup.src.sh <<<

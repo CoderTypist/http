@@ -40,5 +40,9 @@ main() {
     echo "${get_request_nonexistent}" | nc "${WEB_SERVER_IP}" "${WEB_SERVER_PORT}"
 }
 
-source setup.src.sh
+source ../setup.src.sh ||
+{
+    echo "Failed to source setup.src.sh" >&2;
+    exit 1;
+}
 main "$@"
