@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import  os
+import os
 import requests
 import sys
 

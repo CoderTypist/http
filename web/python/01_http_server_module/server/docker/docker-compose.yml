@@ -1,0 +1,18 @@
+services:
+  web:
+    image: web:1.0
+    # creates environment variables when running the container
+    env_file: ../../web.env
+    build:
+      context: ../../
+      dockerfile: server/docker/Dockerfile-web
+      # variables only needed for docker build
+      # variables were pre-exported prior to 'docker-compose up --build'
+      args:
+        WEB_SERVER_IP: "${WEB_SERVER_IP}"
+        WEB_SERVER_PORT: "${WEB_SERVER_PORT}"
+        WEB_SERVER_DIR: "${WEB_SERVER_DIR}"
+    volumes:
+      - ../../files/:/src/files
+    ports:
+      - "${WEB_SERVER_PORT}:${WEB_SERVER_PORT}"
