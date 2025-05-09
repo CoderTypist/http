@@ -23,7 +23,7 @@ main() {
 
 source ../setup.src.sh ||
 {
-    echo "Failed to source setup.src.sh" >&2;
+    echo "Failed to source ../setup.src.sh" >&2;
     exit 1;
 }
 main "$@"
