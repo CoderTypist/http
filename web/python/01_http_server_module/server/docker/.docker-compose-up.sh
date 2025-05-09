@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# alternative to exporting is to have a .env file
+# export for yaml interpolation
 set -a
 source "../../web.env" ||
 {
@@ -10,3 +10,4 @@ source "../../web.env" ||
 set +a
 
 docker-compose up --build
+

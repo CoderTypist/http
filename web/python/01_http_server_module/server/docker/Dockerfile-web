@@ -1,27 +1,20 @@
 FROM python:3.14-rc-bookworm
 
-# ARG to ENV allows for flexible use between 'docker-compose' and 'docker build'
-# docker-compose allows for .env-files
-# docker build does not, so --build-args are needed
-ARG WEB_SERVER_IP
-ARG WEB_SERVER_PORT
-ARG WEB_SERVER_DIR
+# config
+ENV WEB_SERVER_IP="0.0.0.0"
+ENV WEB_SERVER_PORT="8888"
+ENV WEB_SERVER_DIR="/src/files"
 
-ENV WEB_SERVER_IP="$WEB_SERVER_IP"
-ENV WEB_SERVER_PORT="$WEB_SERVER_PORT"
-ENV WEB_SERVER_DIR="$WEB_SERVER_DIR"
-
-# files
+# server
 RUN mkdir /src
 COPY server/start_server.sh /src/server/start_server.sh
 COPY setup.src.sh /src/setup.src.sh
 RUN chmod +x /src/server/start_server.sh
 
-# http version
-RUN echo "HTTP 1.0 - http.server" > README.md
-
-# script sourcing
-WORKDIR /src/server/
+# README
+RUN echo -e "Using: http.server\nHTTP: 1.0" > README.md
 
 # start web server
+EXPOSE 8888
+WORKDIR /src/server
 ENTRYPOINT ["/src/server/start_server.sh"]
