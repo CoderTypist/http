@@ -1,0 +1,20 @@
+FROM python:3.14-rc-bookworm
+
+# config
+ENV WEB_SERVER_IP="0.0.0.0"
+ENV WEB_SERVER_PORT="8888"
+ENV WEB_SERVER_DIR="/src/files"
+
+# server
+RUN mkdir /src
+COPY server/start_server.sh /src/server/start_server.sh
+COPY setup.src.sh /src/setup.src.sh
+RUN chmod +x /src/server/start_server.sh
+
+# README
+RUN echo -e "Using: http.server\nHTTP: 1.0" > README.md
+
+# start web server
+EXPOSE 8888
+WORKDIR /src/server
+ENTRYPOINT ["/src/server/start_server.sh"]
