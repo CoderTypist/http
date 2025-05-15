@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker build -t web:1.0 -f ./Dockerfile-web ../../
+docker build -t web:1.1 -f ./Dockerfile-web ../../
 

@@ -2,19 +2,22 @@ FROM python:3.14-rc-bookworm
 
 # config
 ENV WEB_SERVER_IP="0.0.0.0"
-ENV WEB_SERVER_PORT="8888"
+ENV WEB_SERVER_PORT="8889"
 ENV WEB_SERVER_DIR="/src/files"
 
-# server
-RUN mkdir /src
-COPY server/start_server.sh /src/server/start_server.sh
-COPY setup.src.sh /src/setup.src.sh
-RUN chmod +x /src/server/start_server.sh
+# convenience
+RUN apt-get update && apt-get install -y vim
 
-# README
-RUN echo -e "Using: http.server\nHTTP: 1.0" > README.md
+# server
+RUN mkdir -p /app/server/src/
+COPY server/requirements.txt /app/server/requirements.txt
+COPY server/src/ /app/server/src/
+RUN pip3 install --no-cache-dir -r /app/server/requirements.txt \
+    && chmod +x /app/server/src/server.py \
+    && echo "Using: BaseHTTPRequestHandler" > README.md \
+    && echo "HTTP: 1.1" >> README.md
 
 # start web server
-EXPOSE 8888
-WORKDIR /src/server
-ENTRYPOINT ["/src/server/start_server.sh"]
+EXPOSE 8889
+WORKDIR /app/server/src/
+ENTRYPOINT ["/app/server/src/server.py"]

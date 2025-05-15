@@ -7,11 +7,12 @@ source "../../web.env" ||
 }
 
 docker run -ti --rm \
-    -v "$(realpath ../../files)":/src/files \
+    -v "$(realpath ../../files)":/app/files/ \
+    -v "$(realpath ../src/)":/app/server/src/ \
     --entrypoint=/bin/bash \
     -e WEB_SERVER_IP="${WEB_SERVER_IP}" \
     -e WEB_SERVER_PORT="${WEB_SERVER_PORT}" \
     -e WEB_SERVER_DIR="${WEB_SERVER_DIR}" \
     -p "${WEB_SERVER_PORT}":"${WEB_SERVER_PORT}" \
-    web:1.0
+    web:1.1
 
