@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import urlparse, parse_qs
 import os
 from pathlib import Path
 import sys
+from urllib.parse import urlparse, parse_qs
 
 
 class DirectoryNotFoundError(FileNotFoundError):
@@ -12,83 +13,135 @@ class DirectoryNotFoundError(FileNotFoundError):
         super().__init__(message)
 
 
+class NotARegularFileError(OSError):
+    def __init__(self, message=None):
+        super().__init__(message)
+
+
+class FileContents:
+
+    def __init__(self, fpath):
+        self.fpath = fpath
+        self.text = ""
+        self.binary = b''
+        self.mtime = 0
+        self.update()
+
+    def is_modified(self):
+        if self.mtime == self.fpath.stat().st_mtime:
+            return False
+        return True
+
+    def update(self):
+        if not self.fpath.exists():
+            raise FileNotFoundError(f"No such file: {self.fpath}")
+        if not self.fpath.is_file():
+            raise NotARegularFileError(f"{self.fpath} is not a regular file")
+        with open(self.fpath, "r") as fhandle:
+            self.text = fhandle.read()
+        self.binary = self.text.encode("utf-8")
+        self.mtime = self.fpath.stat().st_mtime
+
+# get instantiated with each new request :/
 class WebServerHTTPRequestHandler(BaseHTTPRequestHandler):
 
     protocol_version = "HTTP/1.1"
+    cached_files = {}
 
     def __init__(self, request, client_address, server):
-        self.base_dir = os.environ.get("WEB_SERVER_DIR")
+        self.base_dir = Path(os.environ.get("WEB_SERVER_DIR"))
+        self._cached_files = WebServerHTTPRequestHandler.cached_files
+        self.init_cache()
         super().__init__(request, client_address, server)
 
+    def init_cache(self):
+        if len(self._cached_files) == 0:
+            for fpath in self.base_dir.rglob("*"):
+                if fpath.is_file():
+                    print(f" - init cache: {fpath}")
+                    self.read_file(str(fpath).removeprefix(str(self.base_dir)))
+
+    def read_file(self, fpath) -> FileContents:
+
+        fpath = Path(f"{self.base_dir}{fpath}")
+        
+        # do not serve a non-existent file, even if cached
+        if not fpath.exists():
+            if self._cached_files.get(fpath):
+                print(f" - removed {fpath} from the cache")
+                del self._cached_files[fpath]
+            raise FileNotFoundError(f"No such file: {fpath}")
+        
+        if not fpath.is_file():
+            if self._cached_files.get(fpath):
+                print(f" - removed {fpath} from the cache")
+                del self._cached_files[fpath]
+            raise NotARegularFileError(f"{fpath} is not a regular file")
+
+        # get file
+        cached_file: FileContents = self._cached_files.get(fpath)
+        if cached_file:
+            print(f" - cache hit: {fpath}")
+            if cached_file.is_modified():
+                print(f"   - modified")
+                cached_file.update()
+                print(f"   - updated")
+            return cached_file
+        else:
+            print(f" - cache miss: {fpath}")
+            self._cached_files[fpath] = FileContents(fpath)
+            return self._cached_files[fpath]
+    
+    def send_success(self, code, binary):
+        self.send_response(code)
+        self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Length", len(binary))
+        self.end_headers()
+        self.wfile.write(binary)
+
     def do_GET(self):
+        
+        # validate path
+        valid_paths = [
+            "/index.html",
+            "/forms/get.html",
+            "/forms/post.html",
+            "/forms/delete.html"
+        ]
 
-        path = urlparse(self.path).path
-        # query = parse_qs(urlparse(self.path).query)
+        path = urlparse(self.path).path # query = parse_qs(urlparse(self.path).query)
 
-        match path:
+        if path == "/":
+            path = "/index.html"
+        
+        if path not in valid_paths:
+            try:
+                self.log_error(f"GET request for non-existent resource: {path}")
+                self.send_error(404, "Not Found")
+            except Exception as e:
+                self.log_error(f"Response error: 404: {path}: {e}")
+                return
 
-            case "/" | "/index.html":
-                try:
-                    with open(f"{self.base_dir}/index.html", "rb") as f_html:
-                        b_html = f_html.read()
-                except Exception as e:
-                    print(e)
-                    self.send_error(500, "Internal Server Error")
-                    return
+        # read file
+        try:
+            fcontents = self.read_file(path)
+        except Exception as e:
+            self.log_error(f"Failed to read {path}: {e}")
+            try:
+                self.send_error(500, "Internal Server Error")
+            except Exception as e:
+                self.log_error(f"Response error: 500: {e}")
+            return
+        
+        # create response
+        response = fcontents.binary
 
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html")
-                self.send_header("Content-Length", len(b_html))
-                self.end_headers()
-                self.wfile.write(b_html)
-
-            case "/forms/get.html":
-                try:
-                    with open(f"{self.base_dir}/forms/get.html", "rb") as f_html:
-                        b_html = f_html.read()
-                except Exception as e:
-                    print(e)
-                    self.send_error(500, "Internet Server Error")
-                    return
-
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html")
-                self.send_header("Content-Length", len(b_html))
-                self.end_headers()
-                self.wfile.write(b_html)
-
-            case "/forms/post.html":
-                try:
-                    with open(f"{self.base_dir}/forms/post.html", "rb") as f_html:
-                        b_html = f_html.read()
-                except Exception as e:
-                    print(e)
-                    self.send_error(500, "Internet Server Error")
-                    return
-
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html")
-                self.send_header("Content-Length", len(b_html))
-                self.end_headers()
-                self.wfile.write(b_html)
-
-            case "/forms/delete.html":
-                try:
-                    with open(f"{self.base_dir}/forms/delete.html", "rb") as f_html:
-                        b_html = f_html.read()
-                except Exception as e:
-                    print(e)
-                    self.send_error(500, "Internet Server Error")
-                    return
-
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html")
-                self.send_header("Content-Length", len(b_html))
-                self.end_headers()
-                self.wfile.write(b_html)
-            
-            case _:
-                self.send_error(404, "Not found")
+        # send response
+        try:
+            self.send_success(200, response)
+        except Exception as e:
+            self.log_error(f"Failed to serve {path}: {e}")
+            return
     
     def do_POST(self):
         ...
