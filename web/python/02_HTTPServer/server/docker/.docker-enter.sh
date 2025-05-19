@@ -7,7 +7,7 @@ source "../../web.env" ||
 }
 
 docker run -ti --rm \
-    -v "$(realpath ../../files)":/app/files/ \
+    -v "$(realpath ../../files/)":/app/files/ \
     -v "$(realpath ../src/)":/app/server/src/ \
     --entrypoint=/bin/bash \
     -e WEB_SERVER_IP="${WEB_SERVER_IP}" \
