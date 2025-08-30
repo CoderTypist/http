@@ -35,8 +35,17 @@ main() {
 		EOF
     )"
 
+    echo "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+    echo "${get_request_line}"
+    echo ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ."
     echo "${get_request_line}" | nc "${WEB_SERVER_IP}" "${WEB_SERVER_PORT}"
+    echo "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+    echo "${get_request_lines}"
+    echo ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ."
     echo "${get_request_lines}" | nc "${WEB_SERVER_IP}" "${WEB_SERVER_PORT}"
+    echo "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+    echo "${get_request_nonexistent}"
+    echo ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ."
     echo "${get_request_nonexistent}" | nc "${WEB_SERVER_IP}" "${WEB_SERVER_PORT}"
 }
 
