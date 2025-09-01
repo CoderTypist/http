@@ -8,6 +8,8 @@ services:
     volumes:
       # files to serve
       - ../../files/:/app/files/
+      # database dir
+      - ../../data:/app/data/
       # local source code (for dev purposes)
       - ../src/:/app/server/src/
     ports:
