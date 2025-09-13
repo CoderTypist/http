@@ -50,13 +50,12 @@ class WebServerHTTPRequestHandler(BaseHTTPRequestHandler):
     cached_files = {}
 
     def __init__(self, request, client_address, server):
-        self.base_dir = Path(os.environ.get("WEB_SERVER_DIR"))
-        self._cached_files = WebServerHTTPRequestHandler.cached_files
-        # self.init_cache()
+        for cls_attr in ['web_server_ip', 'web_server_port', 'web_server_dir', 'database_dir', 'database_name', 'conn', 'cached_files']:
+            setattr(self, cls_attr, getattr(WebServerHTTPRequestHandler, cls_attr))
         super().__init__(request, client_address, server)
 
     # def init_cache(self):
-    #     if len(self._cached_files) == 0:
+    #     if len(self.cached_files) == 0:
     #         for fpath in self.base_dir.rglob("*"):
     #             if fpath.is_file():
     #                 print(f" - init cache: {fpath}")
@@ -69,23 +68,23 @@ class WebServerHTTPRequestHandler(BaseHTTPRequestHandler):
         If a file is cached and hasn't been modified, the cached file is returned.
         If the file isn't cached or has been modified, the file contents are read from disk.
         """
-        fpath = Path(f"{self.base_dir}{fpath}")
+        fpath = Path(f"{self.web_server_dir}{fpath}")
         
         # do not serve a non-existent file, even if cached
         if not fpath.exists():
-            if self._cached_files.get(fpath):
+            if self.cached_files.get(fpath):
                 print(f" - removed '{fpath}' from the cache")
-                del self._cached_files[fpath]
+                del self.cached_files[fpath]
             raise FileNotFoundError(f"No such file: '{fpath}'")
         
         if not fpath.is_file():
-            if self._cached_files.get(fpath):
+            if self.cached_files.get(fpath):
                 print(f" - removed {fpath} from the cache")
-                del self._cached_files[fpath]
+                del self.cached_files[fpath]
             raise NotARegularFileError(f"Not a regular file: '{fpath}'")
 
         # get file
-        cached_file: FileContents = self._cached_files.get(fpath)
+        cached_file: FileContents = self.cached_files.get(fpath)
         if cached_file:
             print(f" - cache hit: {fpath}")
             if cached_file.is_modified():
@@ -95,8 +94,8 @@ class WebServerHTTPRequestHandler(BaseHTTPRequestHandler):
             return cached_file
         else:
             print(f" - cache miss: {fpath}")
-            self._cached_files[fpath] = FileContents(fpath)
-            return self._cached_files[fpath]
+            self.cached_files[fpath] = FileContents(fpath)
+            return self.cached_files[fpath]
     
     def send_success(self, code, binary):
         self.send_response(code)
@@ -171,6 +170,7 @@ def main():
     # validate server configs
     web_server_dir = WebServerHTTPRequestHandler.web_server_dir
     database_dir = WebServerHTTPRequestHandler.database_dir
+    database_file = WebServerHTTPRequestHandler.database_file
 
     if not os.path.exists(web_server_dir):
         raise DirectoryNotFoundError(f"No such directory: '{web_server_dir}'")
@@ -179,10 +179,14 @@ def main():
     if not os.path.isdir(database_dir):
         raise NotADirectoryError(f"Not a directory: '{database_dir}'")
     
+    # create database
+    db_file = Path(f"{database_dir}/{database_file}")
+    if not db_file.exists():
+        setattr(WebServerHTTPRequestHandler, 'conn', sqlite3.connect(db_file))
+    
     # start server
-    web_server_ip = WebServerHTTPRequestHandler.web_server_ip
-    web_server_port = WebServerHTTPRequestHandler.web_server_port
-    httpd = HTTPServer((web_server_ip, web_server_port), WebServerHTTPRequestHandler)
+    addr = (WebServerHTTPRequestHandler.web_server_ip, WebServerHTTPRequestHandler.web_server_port)
+    httpd = HTTPServer(addr, WebServerHTTPRequestHandler)
     httpd.serve_forever()
 
 
