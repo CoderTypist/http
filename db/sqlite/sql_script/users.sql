@@ -17,7 +17,7 @@ VALUES
 SELECT * FROM users;
 
 UPDATE users SET email = 'allen.smith@gmail.com' WHERE username = 'asmith';
-UPDATE users SET username = 'osmith', email = 'ole.smith@gmail.com' WHERE username = 'olmyth'; 
+UPDATE users SET username = 'osmith', email = 'ole.smith@gmail.com' WHERE username = 'olmyth';
 DELETE FROM users WHERE username = 'banned';
 
 .print

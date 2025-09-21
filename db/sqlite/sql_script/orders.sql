@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS order_items (
     order_id INTEGER REFERENCES orders,
     item_no INTEGER,
     product_id INTEGER REFERENCES inventory,
-    quantity INTEGER NOT NULL CHECK (quantity >= 0)
+    quantity INTEGER NOT NULL CHECK (quantity > 0)
 );
 
 .print
@@ -71,3 +71,12 @@ FROM orders
 JOIN users ON orders.user_id = users.user_id
 JOIN order_items ON orders.order_id = order_items.order_id
 JOIN inventory ON order_items.product_id = inventory.product_id;
+.print
+
+.print --- order totals ---
+SELECT
+    order_items.order_id,
+    SUM(order_items.quantity * inventory.cost) AS order_total
+FROM order_items
+JOIN inventory ON order_items.product_id = inventory.product_id
+GROUP BY order_items.order_id;
