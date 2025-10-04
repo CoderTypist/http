@@ -3,7 +3,7 @@
 from argparse import ArgumentParser
 import csv
 import logging
-from logging import Formatter, StreamHandler
+from logging import FileHandler, Formatter, StreamHandler
 from pathlib import Path
 import sqlite3
 from sqlite3 import Connection
@@ -20,6 +20,7 @@ def main():
     parser.add_argument("dbfile", metavar="DATABASE_FILE", type=str, help="sqlite database file")
     parser.add_argument("-p", "--purge", action="store_true", help="drop all tables at the beginning of the script")
     parser.add_argument("-d", "--drop", action="store_true", help="drop all tables at the end of the script")
+    parser.add_argument("-o", "--order", dest="orders", action="append", help="file containing an order to be placed")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
     init_logger(args.verbose)
@@ -28,49 +29,58 @@ def main():
         conn: Connection = sqlite3.connect(args.dbfile)
         conn.cursor().execute("PRAGMA foreign_keys = ON")
     except Exception as e:
-        print(e, file=stderr)
-        print(f"ERROR: Failed to connect to {args.dbfile}", file=stderr)
+        logger.error(e)
+        logger.error("Failed to connect to {args.dbfile}")
         sys.exit(1)
 
     if args.purge:
         try:
             drop_tables(conn)
         except Exception as e:
-            print(e, file=stderr)
-            print(f"ERROR: Failed to drop tables", file=stderr)
+            logger.error(e)
+            logger.error("Failed to drop tables")
             sys.exit(1)
 
     try:
         create_tables(conn)
     except Exception as e:
-        print(e, file=stderr)
-        print(f"ERROR: Failed to create tables", file=stderr)
+        logger.error(e)
+        logger.error("Failed to create tables")
         sys.exit(1)
 
     try:
         init_table_users(conn, Path("users.csv"))
     except Exception as e:
-        print(e, file=stderr)
-        print(f"ERROR: Failed to initialize the users table", file=stderr)
+        logger.error(e)
+        logger.error("Failed to initialize the users table")
         sys.exit(1)
 
     try:
         init_table_inventory(conn, Path("inventory.csv"))
     except Exception as e:
-        print(e, file=stderr)
-        print(f"ERROR: Failed to initialize the inventory table", file=stderr)
+        logger.error(e)
+        logger.error("Failed to initialize the inventory table")
         sys.exit(1)
+
+    if args.orders:
+        for order in args.orders:
+            try:
+                place_order(conn,  Path(order))
+            except Exception as e:
+                logger.error(e)
+                logger.error(f"Failed to place order: {order}")
+                continue
 
     if args.drop:
         try:
             drop_tables(conn)
         except Exception as e:
-            print(e, file=stderr)
-            print(f"ERROR: Failed to drop tables", file=stderr)
+            logger.error(e)
+            logger.error("Failed to drop tables")
             sys.exit(1)
 
 
-def init_logger(level) -> None:
+def init_logger(level, log_file="db.log") -> None:
     """
     Configures the logger to print to stdout and sets the log level.
 
@@ -80,10 +90,14 @@ def init_logger(level) -> None:
     Returns: None
     """
 
-    handler = StreamHandler(sys.stdout)
     formatter = Formatter("[%(levelname)s] %(filename)s:%(funcName)s:%(lineno)d %(msg)s")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+    handlers = [
+        StreamHandler(sys.stdout),
+        FileHandler(log_file)
+    ]
+    for handler in handlers:
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
 
     match level:
         case 0:
@@ -211,7 +225,6 @@ def init_table_inventory(conn, fpath: Path) -> None:
         items = [item for item in list(csv_reader)]
         for item in items:
             item["quantity"] = int(item["quantity"])
-            print(item)
 
     with conn:
         conn.executemany("""
@@ -223,6 +236,22 @@ def init_table_inventory(conn, fpath: Path) -> None:
             cur = conn.execute("SELECT cost, name, category, description FROM inventory")
             for item in cur.fetchall():
                 logger.debug(f"[ITEM]> cost: {item[0]}, name: {item[1]}, category: {item[2]}, description: {item[3]}")
+
+
+def place_order(conn, fpath: Path):
+    """
+    Places an order.
+
+    Args:
+        conn (Connection): database connection
+        fpath (Path): csv file with the order items
+
+    Returns: None
+    """
+    if not fpath.exists():
+        raise FileNotFoundError(fpath)
+    if not fpath.is_file():
+        raise FileNotFoundError(f"Not a file: {fpath}")
 
 
 def drop_tables(conn):
